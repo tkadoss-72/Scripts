@@ -1,0 +1,1662 @@
+#### MicroSofft Graph Module Login
+Connect-Graph Directory.ReadWrite.All, Group.ReadWrite.All, User.ReadWrite.All, GroupMember.ReadWrite.All, DeviceManagementApps.ReadWrite.All, DeviceManagementConfiguration.ReadWrite.All, DeviceManagementManagedDevices.ReadWrite.All, DeviceManagementServiceConfig.ReadWrite.All, Directory.ReadWrite.All, User.ManageIdentities.All, User.ReadWrite, User.ReadWrite.All -NoWelcome
+  Write-Host 'Welcome to Microsoft Graph'
+#### MsolService Module Login
+Connect-MsolService
+  Write-Host 'Welcome to MsolService'
+#### Exchange Module Login
+Connect-ExchangeOnline -ShowBanner:$false
+  Write-Host 'Welcome to ExchangeOnline'
+#### Teams Module Login
+Connect-MicrosoftTeams
+  Write-Host 'Welcome to MicrosoftTeams'
+#### SharePoint Online Module Login
+Connect-SPOService -Url https://hoar-admin.sharepoint.com
+  Write-Host 'Welcome to SPOService'
+#### AzureAD Online Module Login
+Connect-AzureAD
+  Write-Host 'Welcome to AzureAD'
+
+function Call-dialogue_psf {
+    param(
+        [int]$TotalTime,
+        [string]$OKB  # Add $OKB as a parameter
+    )
+
+    # Import the Assemblies
+    [void][reflection.assembly]::Load('System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089')
+
+    # Enable Visual Styles
+    [System.Windows.Forms.Application]::EnableVisualStyles()
+
+    # Create Form Objects
+    $form1 = New-Object 'System.Windows.Forms.Form'
+    $label1 = New-Object 'System.Windows.Forms.Label'
+    $label2 = New-Object 'System.Windows.Forms.Label'
+    $timer1 = New-Object 'System.Windows.Forms.Timer'
+
+    # Form Load Event
+    $form1_Load = {
+        $script:StartTime = (Get-Date).AddSeconds($TotalTime)
+        $timer1.Start()
+    }
+
+    # Timer Tick Event
+    $timer1_Tick = {
+        [TimeSpan]$span = $script:StartTime - (Get-Date)
+        $label1.Text = "{0:N0}" -f $span.TotalSeconds
+        if ($span.TotalSeconds -le 0) {
+            $timer1.Stop()
+            $form1.Close()
+        }
+    }
+
+    # Configure Form
+    $form1.Controls.Add($label1)
+    $form1.Controls.Add($label2)
+    $form1.ClientSize = '300, 125'
+    $form1.StartPosition = "CenterScreen"
+    $form1.TopMost = $true
+
+    function Call-dialogue_psf {
+    param(
+        [int]$TotalTime,
+        [string]$OKB  # Add $OKB as a parameter
+    )
+
+    # Import the Assemblies
+    [void][reflection.assembly]::Load('System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089')
+
+    # Enable Visual Styles
+    [System.Windows.Forms.Application]::EnableVisualStyles()
+
+    # Create Form Objects
+    $form1 = New-Object 'System.Windows.Forms.Form'
+    $label1 = New-Object 'System.Windows.Forms.Label'
+    $label2 = New-Object 'System.Windows.Forms.Label'
+    $timer1 = New-Object 'System.Windows.Forms.Timer'
+
+    # Form Load Event
+    $form1_Load = {
+        $script:StartTime = (Get-Date).AddSeconds($TotalTime)
+        $timer1.Start()
+    }
+
+    # Timer Tick Event
+    $timer1_Tick = {
+        [TimeSpan]$span = $script:StartTime - (Get-Date)
+        $label1.Text = "{0:N0}" -f $span.TotalSeconds
+        if ($span.TotalSeconds -le 0) {
+            $timer1.Stop()
+            $form1.Close()
+        }
+    }
+
+    # Configure Form
+    $form1.Controls.Add($label1)
+    $form1.Controls.Add($label2)
+    $form1.ClientSize = '300, 125'
+    $form1.StartPosition = "CenterScreen"
+    $form1.TopMost = $true  # Ensure the form stays on top
+    $form1.Name = 'form1'
+    $form1.Text = 'Countdown'
+    $form1.add_Load($form1_Load)
+
+    # Configure Label1 for Countdown
+    $label1.Font = 'Microsoft Sans Serif, 50pt'
+    $label1.Dock = 'Top'
+    $label1.TextAlign = 'MiddleCenter'
+    $label1.Height = 100
+
+    # Configure Label2 for Additional Text
+    $label2.Font = 'Microsoft Sans Serif, 10pt'
+    $label2.TextAlign = 'MiddleCenter'
+    $label2.Dock = 'Bottom'
+    $label2.Height = 30
+    $label2.Text = $OKB
+
+    # Configure Timer
+    $timer1.add_Tick($timer1_Tick)
+
+    # Show the Form
+    return $form1.ShowDialog()
+}
+
+    $form1.Name = 'form1'
+    $form1.Text = 'Countdown'
+    $form1.add_Load($form1_Load)
+
+    # Configure Label1 for Countdown
+    $label1.Font = 'Microsoft Sans Serif, 50pt'
+    $label1.Dock = 'Top'
+    $label1.TextAlign = 'MiddleCenter'
+    $label1.Height = 100
+
+    # Configure Label2 for Additional Text
+    $label2.Font = 'Microsoft Sans Serif, 10pt'
+    $label2.TextAlign = 'MiddleCenter'
+    $label2.Dock = 'Bottom'
+    $label2.Height = 30
+    $label2.Text = $OKB
+
+    # Configure Timer
+    $timer1.add_Tick($timer1_Tick)
+
+    # Show the Form
+    return $form1.ShowDialog()
+}
+function Test-EmailAddressInAD {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$Email
+    )
+
+    Import-Module ActiveDirectory
+
+    # Normalize the email to ensure it matches the proxyAddresses format
+    $emailToCheck = "smtp:" + $Email.ToLower()
+
+    try {
+        # Search for any user that has this email either in the mail attribute or proxyAddresses
+        $userr = Get-ADUser -Filter {mail -eq $Email -or proxyAddresses -like $emailToCheck} -Properties mail, proxyAddresses -ErrorAction Stop
+
+        if ($userr) {
+            Show-UserExistsForm $Email $userr
+            return $true  
+        } else {
+            Write-Output "No existing AD user with email '$Email'."
+            return $false  # Email does not exist in AD
+        }
+    } catch {
+        Write-Error "An error occurred: $_"
+        return $false  # Return false due to an error
+    }
+}
+function Show-UserExistsForm {
+    param (
+        [string]$Email,
+        [psobject]$Userr
+    )
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+
+    $objForm = New-Object System.Windows.Forms.Form
+    $objForm.Text = "Need New UserAccount"
+    $objForm.Size = New-Object System.Drawing.Size(325,180)
+    $objForm.StartPosition = "CenterScreen"
+    $objForm.TopMost = $True
+
+    $Label = New-Object System.Windows.Forms.Label
+    $Label.Location = New-Object System.Drawing.Size(10,10)
+    $Label.Size = New-Object System.Drawing.Size(300,40)
+    $Label.Text = "Email Address '$Email' already exists in AD under the user: $($Userr.Name) UserAcct: $($Userr.SamAccountName)"
+    $objForm.Controls.Add($Label)
+
+    $LabelNewUser = New-Object System.Windows.Forms.Label
+    $LabelNewUser.Location = New-Object System.Drawing.Size(10,60)
+    $LabelNewUser.Size = New-Object System.Drawing.Size(100,20)
+    $LabelNewUser.Text = "New UserName:"
+    $objForm.Controls.Add($LabelNewUser)
+
+    $TextBoxNewUser = New-Object System.Windows.Forms.TextBox
+    $TextBoxNewUser.Location = New-Object System.Drawing.Size(110,60)
+    $TextBoxNewUser.Size = New-Object System.Drawing.Size(200,20)
+    $objForm.Controls.Add($TextBoxNewUser)
+
+    $OKButton = New-Object System.Windows.Forms.Button
+    $OKButton.Location = New-Object System.Drawing.Size(75,100)
+    $OKButton.Size = New-Object System.Drawing.Size(75,23)
+    $OKButton.Text = "OK"
+    $OKButton.Add_Click({
+        if ([string]::IsNullOrWhiteSpace($TextBoxNewUser.Text)) {
+            [System.Windows.Forms.MessageBox]::Show("Please enter a valid username.", "Input Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+        } else {
+            $script:userACCT = $TextBoxNewUser.Text
+            $objForm.Close()
+     }
+    })
+    $objForm.Controls.Add($OKButton)
+
+    $CancelButton = New-Object System.Windows.Forms.Button
+    $CancelButton.Location = New-Object System.Drawing.Size(175,100)
+    $CancelButton.Size = New-Object System.Drawing.Size(75,23)
+    $CancelButton.Text = "Cancel"
+    $script:cancelClicked = $false
+    $CancelButton.Add_Click({
+     $script:cancelClicked = $true
+     $objForm.Close()
+})
+    $objForm.Controls.Add($CancelButton)
+
+    $objForm.ShowDialog()
+
+    if ($script:cancelClicked) {
+    return
+    }
+
+}
+
+IF ($PSDPV -eq $null){
+$PSDefaultParameterValues["*-AD*:Server"] = "dc-dcb.hoarllc.loc"
+$PSDPV = $True
+}
+
+#### Clears Variables to add another User
+# Remove-Variable * -ErrorAction SilentlyContinue
+if ($name){
+Clear-Variable -Name name,GivenName,Surname,userACCT,title,MGR,Company,X,Field,msg,ap,contrycode,TeamsNum,Office,mail,wWWHomePage,streetAddress,l,st,zip,ProxyAddresses,ProxyAddresses1,TargetAddress,Data11,depart,ophone,911local,validate,dl1,dl2,dl3,dl4,delay,AADUser,FaxID,Group,Manager,ou,pw,RProB4,RRUA,RRUB4,RUA,RUB4,SamaccountName,TRUA,TProB4,TRUB4,UID,user,USerID,UserPrincipalName,UsrID,NewMail.usergroups,userupn,ugrp,bluebeamGroup,bodyLIC,Welcomebody,MGRdept -erroraction 'silentlycontinue'
+if ($checkbox1.CheckState -eq "Checked"){Remove-Variable checkbox1}
+if ($checkbox2.CheckState -eq "Checked"){Remove-Variable checkbox2}
+}
+
+###############Configuration Form
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
+
+$objForm = New-Object System.Windows.Forms.Form 
+$objForm.Text = "New AD Account"
+$objForm.Size = New-Object System.Drawing.Size(325,435) 
+$objForm.StartPosition = "CenterScreen"
+$objForm.TopMost = $True
+
+$objForm.KeyPreview = $True
+$objForm.Add_KeyDown({if ($_.KeyCode -eq "Enter") 
+    {$Name = $data1.SelectedItem;$objForm.Close()}
+    {$Title = $data2.SelectedItem;$objForm.Close()}
+    {$Manager = $data3.SelectedItem;$objForm.Close()}
+    {$Company = $data4.SelectedItem;$objForm.Close()}
+    {$OU = $data5.SelectedItem;$objForm.Close()}
+    {$AP = $data6.SelectedItem;$objForm.Close()}
+    {$Teams = $data7.SelectedItem;$objForm.Close()}
+    {$911Local = $data8.SelectedItem;$objForm.Close()}
+    })
+$objForm.Add_KeyDown({if ($_.KeyCode -eq "Escape") 
+    {$objForm.Close()}})
+
+$OKButton = New-Object System.Windows.Forms.Button
+$OKButton.Location = New-Object System.Drawing.Size(40,365)
+$OKButton.Size = New-Object System.Drawing.Size(100,23)
+$OKButton.Text = "OK"
+$OKButton.TabIndex = 13
+$OKButton.Add_Click({$X=$data15.SelectedItem;$objForm.Close()})
+$objForm.Controls.Add($OKButton)
+
+$CancelButton = New-Object System.Windows.Forms.Button
+$CancelButton.Location = New-Object System.Drawing.Size(175,365)
+$CancelButton.Size = New-Object System.Drawing.Size(100,23)
+$CancelButton.Text = "Cancel"
+$CancelButton.TabIndex = 14
+
+$script:cancelClicked = $false
+$CancelButton.Add_Click({
+    $script:cancelClicked = $true
+    $objForm.Close()
+})
+$objForm.Controls.Add($CancelButton)
+
+#### Define text label1
+$Label1 = New-Object System.Windows.Forms.Label
+$Label1.Location = New-Object System.Drawing.Size(15,15)
+$Label1.Size = New-Object System.Drawing.Size(75,23) 
+$Label1.Text = "Name:"
+$objForm.Controls.Add($Label1) 
+ 
+$Data1 = New-Object System.Windows.Forms.TextBox 
+$Data1.Location = New-Object System.Drawing.Size(90,15) 
+$Data1.Size = New-Object System.Drawing.Size(200,200) 
+$Data1.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$Data1.TabIndex = 0
+$objForm.Controls.Add($Data1) 
+
+#### Define DropBox label2
+$LabelHyp = New-Object System.Windows.Forms.Label
+$LabelHyp.Location = New-Object System.Drawing.Size(15,50) 
+$LabelHyp.Size = New-Object System.Drawing.Size(75,23) 
+$LabelHyp.Text = "Hyphen:"
+$objForm.Controls.Add($LabelHyp) 
+
+$dataHyp = New-Object System.Windows.Forms.TextBox 
+$dataHyp.Location = New-Object System.Drawing.Size(90,50) 
+$dataHyp.Size = New-Object System.Drawing.Size(100,30) 
+$dataHyp.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$objForm.Controls.Add($dataHyp) 
+
+#### Define DropBox label2
+$LabelSufx = New-Object System.Windows.Forms.Label
+$LabelSufx.Location = New-Object System.Drawing.Size(200,50) 
+$LabelSufx.Size = New-Object System.Drawing.Size(30,23) 
+$LabelSufx.Text = "Sufix:"
+$objForm.Controls.Add($LabelSufx) 
+
+$dataSufx = New-Object System.Windows.Forms.TextBox 
+$dataSufx.Location = New-Object System.Drawing.Size(235,50) 
+$dataSufx.Size = New-Object System.Drawing.Size(55,20) 
+$dataSufx.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$objForm.Controls.Add($dataSufx) 
+
+#### Define DropBox label2
+$Label2 = New-Object System.Windows.Forms.Label
+$Label2.Location = New-Object System.Drawing.Size(15,85) 
+$Label2.Size = New-Object System.Drawing.Size(75,23) 
+$Label2.Text = "Title:"
+$objForm.Controls.Add($Label2) 
+
+$data2 = New-Object System.Windows.Forms.ComboBox 
+$data2.Location = New-Object System.Drawing.Size(90,85) 
+$data2.Size = New-Object System.Drawing.Size(200,200) 
+$data2.TabIndex = 1
+
+[void] $data2.Items.Add("Accounting Associate")
+[void] $data2.Items.Add("Accounting Manager ")
+[void] $data2.Items.Add("Admin Assistant")
+[void] $data2.Items.Add("Assistant Controller")
+[void] $data2.Items.Add("Assistant Director of Warehouse Operations")
+[void] $data2.Items.Add("Assistant Field Coordinator")
+[void] $data2.Items.Add("Assistant Preconstruction Manager")
+[void] $data2.Items.Add("Assistant Project Manager")
+[void] $data2.Items.Add("Assistant Superintendent")
+[void] $data2.Items.Add("Assistant to the President")
+[void] $data2.Items.Add("Assistant Warehouse Manager")
+[void] $data2.Items.Add("Associate General Counsel")
+[void] $data2.Items.Add("Audit Accounting Associate")
+[void] $data2.Items.Add("Audit Manager")
+[void] $data2.Items.Add("Auditor")
+[void] $data2.Items.Add("Auditor,Sr Associate")
+[void] $data2.Items.Add("Co-Op Student")
+[void] $data2.Items.Add("Captain")
+[void] $data2.Items.Add("Carpenter")
+[void] $data2.Items.Add("Carpenter Foreman")
+[void] $data2.Items.Add("Carpenter Helper")
+[void] $data2.Items.Add("Carpenter I")
+[void] $data2.Items.Add("Carpenter II")
+[void] $data2.Items.Add("Chief Estimator")
+[void] $data2.Items.Add("Chief Pilot")
+[void] $data2.Items.Add("Claims Coordinator")
+[void] $data2.Items.Add("Communications Manager")
+[void] $data2.Items.Add("Concrete Finisher")
+[void] $data2.Items.Add("Construction Coordinator")
+[void] $data2.Items.Add("Construction/Engineer Audit Analyst")
+[void] $data2.Items.Add("Construction/Engineer Audit Associate")
+[void] $data2.Items.Add("Consultant")
+[void] $data2.Items.Add("Content Marketing Manager")
+[void] $data2.Items.Add("Controller")
+[void] $data2.Items.Add("Corporate Accountant")
+[void] $data2.Items.Add("Corporate Equipment Sales & Operations Director")
+[void] $data2.Items.Add("Crane & Hoist Technican")
+[void] $data2.Items.Add("Crane Operator")
+[void] $data2.Items.Add("Creative Manager")
+[void] $data2.Items.Add("CRM Administrator")
+[void] $data2.Items.Add("Data Architect")
+[void] $data2.Items.Add("Data Engineer")
+[void] $data2.Items.Add("Director Business Development")
+[void] $data2.Items.Add("Director Division Operations")
+[void] $data2.Items.Add("Director of Construction Technology")
+[void] $data2.Items.Add("Director of Field Operations")
+[void] $data2.Items.Add("Director of Market Research and Analytics")
+[void] $data2.Items.Add("Director of Planning Services")
+[void] $data2.Items.Add("Director of PM Operations")
+[void] $data2.Items.Add("Director of Program Develop,ent")
+[void] $data2.Items.Add("Director Preconstruction Services")
+[void] $data2.Items.Add("Director Quality Assurance / Quality Control")
+[void] $data2.Items.Add("Director Warehouse Operations - Birmingham")
+[void] $data2.Items.Add("Division Engagement Coordinator")
+[void] $data2.Items.Add("Division Safety Director")
+[void] $data2.Items.Add("Division Vice President")
+[void] $data2.Items.Add("Driver")
+[void] $data2.Items.Add("Electrical Preconstruction Manager")
+[void] $data2.Items.Add("Equipment Operator")
+[void] $data2.Items.Add("ESTIMATOR")
+[void] $data2.Items.Add("EVP & COO")
+[void] $data2.Items.Add("EVP Corporate")
+[void] $data2.Items.Add("EVP Operations")
+[void] $data2.Items.Add("EXECUTIVE ASSISTANT")
+[void] $data2.Items.Add("Executive Assistant")
+[void] $data2.Items.Add("Facilities Maintenance Project Manager")
+[void] $data2.Items.Add("Field Coordinator")
+[void] $data2.Items.Add("Field Engineer")
+[void] $data2.Items.Add("Field Engineer (Surveyor)")
+[void] $data2.Items.Add("Field Office Admin")
+[void] $data2.Items.Add("Field Operations Coordinator")
+[void] $data2.Items.Add("General Superintendent Field Operations")
+[void] $data2.Items.Add("GIS Analyst")
+[void] $data2.Items.Add("Graphic Designer")
+[void] $data2.Items.Add("Help Desk Analyst")
+[void] $data2.Items.Add("Hoist Operator")
+[void] $data2.Items.Add("HR Assistant")
+[void] $data2.Items.Add("HR Generalist")
+[void] $data2.Items.Add("Intern")
+[void] $data2.Items.Add("Insurance & Compliance Manager")
+[void] $data2.Items.Add("Interior Design APM")
+[void] $data2.Items.Add("Interior Design PM")
+[void] $data2.Items.Add("IT Support Manager")
+[void] $data2.Items.Add("IT Support Temp")
+[void] $data2.Items.Add("Laborer")
+[void] $data2.Items.Add("Learning & Development Manager")
+[void] $data2.Items.Add("Legal Coordinator")
+[void] $data2.Items.Add("Mailroom Clerk")
+[void] $data2.Items.Add("Manager of Program Services")
+[void] $data2.Items.Add("Marketing Assistant")
+[void] $data2.Items.Add("Marketing Coordinator")
+[void] $data2.Items.Add("Marketing Manager")
+[void] $data2.Items.Add("Marketing Research Analyst")
+[void] $data2.Items.Add("Mechanic")
+[void] $data2.Items.Add("Mechanical Preconstruction Manager")
+[void] $data2.Items.Add("MEP Manager")
+[void] $data2.Items.Add("MEPF Superintendent")
+[void] $data2.Items.Add("MOT/Flagger")
+[void] $data2.Items.Add("Network Administrator")
+[void] $data2.Items.Add("Office Assistant")
+[void] $data2.Items.Add("Office Manager")
+[void] $data2.Items.Add("Operations & Support Manager")
+[void] $data2.Items.Add("Operations Director")
+[void] $data2.Items.Add("Payroll and Accounting Administrator")
+[void] $data2.Items.Add("Payroll Associate")
+[void] $data2.Items.Add("Payroll Manager")
+[void] $data2.Items.Add("Pilot")
+[void] $data2.Items.Add("Precconstruction Engineer")
+[void] $data2.Items.Add("Precconstruction Executive")
+[void] $data2.Items.Add("Preconstruction Coordinator")
+[void] $data2.Items.Add("Preconstruction Manager")
+[void] $data2.Items.Add("Preconstruction Systems Analyst")
+[void] $data2.Items.Add("President")
+[void] $data2.Items.Add("President & CEO")
+[void] $data2.Items.Add("Principal")
+[void] $data2.Items.Add("Principal, Audit Services")
+[void] $data2.Items.Add("Program Executive")
+[void] $data2.Items.Add("Project Controls Engineer")
+[void] $data2.Items.Add("Project Controls Manager")
+[void] $data2.Items.Add("Project Controls Specialist")
+[void] $data2.Items.Add("Project Coordinator")
+[void] $data2.Items.Add("Project Engineer")
+[void] $data2.Items.Add("Project Executive")
+[void] $data2.Items.Add("Project Manager")
+[void] $data2.Items.Add("Project Safety Coordinator")
+[void] $data2.Items.Add("Project Safety Manager")
+[void] $data2.Items.Add("Project Scheduler")
+[void] $data2.Items.Add("Proposal Coordinator")
+[void] $data2.Items.Add("Quality Assurance Manager")
+[void] $data2.Items.Add("Receptionist")
+[void] $data2.Items.Add("Regional Director")
+[void] $data2.Items.Add("Regional Safety Director")
+[void] $data2.Items.Add("Rigger/Crane Operator")
+[void] $data2.Items.Add("Rigger/Signal Person")
+[void] $data2.Items.Add("Risk Administrative Assistant")
+[void] $data2.Items.Add("Rod Buster")
+[void] $data2.Items.Add("Safety Manager")
+[void] $data2.Items.Add("Senior Accounting Associate")
+[void] $data2.Items.Add("Senior Accounting Manager  ")
+[void] $data2.Items.Add("Senior Admin Assistant")
+[void] $data2.Items.Add("Senior Estimator")
+[void] $data2.Items.Add("Senior Field Coordinator")
+[void] $data2.Items.Add("Senior Financial Analyst")
+[void] $data2.Items.Add("Senior Marketing Coordinator")
+[void] $data2.Items.Add("Senior Preconstruction Manager")
+[void] $data2.Items.Add("Senior Program Manager")
+[void] $data2.Items.Add("Senior Project Manager")
+[void] $data2.Items.Add("Senior Superintendent")
+[void] $data2.Items.Add("Senior Superintendent Field Operations")
+[void] $data2.Items.Add("Senior Vice President")
+[void] $data2.Items.Add("SmartBuild Director")
+[void] $data2.Items.Add("Sr Marketing Manager, Web & Digital Strategy")
+[void] $data2.Items.Add("Sr Program Development Manager")
+[void] $data2.Items.Add("Sr Marketing Manager")
+[void] $data2.Items.Add("Superintendent")
+[void] $data2.Items.Add("Superintendent Field Operations")
+[void] $data2.Items.Add("Systems Administrator")
+[void] $data2.Items.Add("Systems Technician")
+[void] $data2.Items.Add("Technology Analyst ")
+[void] $data2.Items.Add("VDC Coordinator ")
+[void] $data2.Items.Add("VDC Director")
+[void] $data2.Items.Add("VDC Engineer")
+[void] $data2.Items.Add("VDC Manager")
+[void] $data2.Items.Add("Vice President")
+[void] $data2.Items.Add("Vice President Audit Services")
+[void] $data2.Items.Add("Vice President of Marketing")
+[void] $data2.Items.Add("Vice President of Operations")
+[void] $data2.Items.Add("Vice President Preconstruction Services")
+[void] $data2.Items.Add("VP & CFO")
+[void] $data2.Items.Add("VP Business Development")
+[void] $data2.Items.Add("VP Construction ")
+[void] $data2.Items.Add("VP Division Operations")
+[void] $data2.Items.Add("VP Human Resources")
+[void] $data2.Items.Add("VP IT")
+[void] $data2.Items.Add("VP Operations")
+[void] $data2.Items.Add("VP Planning Services")
+[void] $data2.Items.Add("VP Preconstruction Services")
+[void] $data2.Items.Add("VP Program Development")
+[void] $data2.Items.Add("VP Safety")
+[void] $data2.Items.Add("Warehouse Manager")
+[void] $data2.Items.Add("Warehouse Yard Associate")
+
+#### Define text label3
+$Label3 = New-Object System.Windows.Forms.Label
+$Label3.Location = New-Object System.Drawing.Size(15,120)
+$Label3.Size = New-Object System.Drawing.Size(75,23) 
+$Label3.Text = "Manager:"
+$objForm.Controls.Add($Label3) 
+ 
+$Data3 = New-Object System.Windows.Forms.TextBox 
+$Data3.Location = New-Object System.Drawing.Size(90,120) 
+$Data3.Size = New-Object System.Drawing.Size(200,200) 
+$Data3.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$Data3.TabIndex = 2
+$objForm.Controls.Add($Data3) 
+
+#### Define DropBox label4
+$label4 = New-Object System.Windows.Forms.Label
+$label4.Location = New-Object System.Drawing.Size(15,155) 
+$label4.Size = New-Object System.Drawing.Size(75,23) 
+$label4.Text = "Company:"
+$objForm.Controls.Add($label4) 
+
+$data4 = New-Object System.Windows.Forms.ComboBox 
+$data4.Location = New-Object System.Drawing.Size(90,155) 
+$data4.Size = New-Object System.Drawing.Size(200,200) 
+$data4.TabIndex = 3
+
+[void] $data4.Items.Add("Hoar Construction")
+[void] $data4.Items.Add("HPM")
+[void] $data4.Items.Add("Hoar Holdings")
+[void] $data4.Items.Add("RPIRents")
+[void] $data4.Items.Add("HPMJohnson")
+[void] $data4.Items.Add("Hoar Consultant")
+[void] $data4.Items.Add("HPM Consultant")
+
+#### Define DropBox label5
+$label5 = New-Object System.Windows.Forms.Label
+$label5.Location = New-Object System.Drawing.Size(15,190) 
+$label5.Size = New-Object System.Drawing.Size(75,23) 
+$label5.Text = "OU:"
+$objForm.Controls.Add($label5) 
+
+$data5 = New-Object System.Windows.Forms.ComboBox 
+$data5.Location = New-Object System.Drawing.Size(90,190) 
+$data5.Size = New-Object System.Drawing.Size(200,200) 
+$data5.TabIndex = 4
+
+[void] $data5.Items.Add("HOAR_Atl_User")
+[void] $data5.Items.Add("HOAR_Austin_User")
+[void] $data5.Items.Add("HOAR_Bham_User")
+[void] $data5.Items.Add("HOAR_Chattanooga_User")
+[void] $data5.Items.Add("HOAR_DC_User")
+[void] $data5.Items.Add("HOAR_Houston_User")
+[void] $data5.Items.Add("HOAR_Nashville_User")
+[void] $data5.Items.Add("HOAR_NTX_User")
+[void] $data5.Items.Add("HOAR_Orlando_User")
+[void] $data5.Items.Add("HOAR_Tampa_User")
+[void] $data5.Items.Add("HPM_Bham_User")
+[void] $data5.Items.Add("HPM_Dallas_User")
+[void] $data5.Items.Add("HPM_Field_User")
+[void] $data5.Items.Add("HPM_Johnson_User")
+[void] $data5.Items.Add("HPM_Tuscaloosa_User")
+[void] $data5.Items.Add("RPI_Bessemer_User")
+[void] $data5.Items.Add("RPI_Houston_User")
+[void] $data5.Items.Add("Service Accounts")
+
+#### Define DropBox label6
+$label6 = New-Object System.Windows.Forms.Label
+$label6.Location = New-Object System.Drawing.Size(15,225) 
+$label6.Size = New-Object System.Drawing.Size(40,23) 
+$label6.Text = "AP:"
+$objForm.Controls.Add($label6) 
+
+$data6 = New-Object System.Windows.Forms.ComboBox 
+$data6.Location = New-Object System.Drawing.Size(90,225) 
+$data6.Size = New-Object System.Drawing.Size(150,100) 
+$data6.TabIndex = 6
+
+[void] $data6.Items.Add("AX_01_Corporate")
+[void] $data6.Items.Add("AX_02_HR")
+[void] $data6.Items.Add("AX_03_IT")
+[void] $data6.Items.Add("AX_04_Alabama")
+[void] $data6.Items.Add("AX_05_01_Payroll")
+[void] $data6.Items.Add("AX_05_Accounting")
+#[void] $data6.Items.Add("AX_06_Warehouse")
+[void] $data6.Items.Add("AX_07_DC")
+[void] $data6.Items.Add("AX_08_Florida")
+[void] $data6.Items.Add("AX_09_21_Texas")
+#[void] $data6.Items.Add("AX_09_Austin")
+[void] $data6.Items.Add("AX_11_Program Management")
+[void] $data6.Items.Add("AX_12_Tennessee")
+[void] $data6.Items.Add("AX_20_ALHealthcare")
+#[void] $data6.Items.Add("AX_99_HPMJohsonJV")
+
+#### Define text label7
+$label7 = New-Object System.Windows.Forms.Label
+$label7.Location = New-Object System.Drawing.Size(15,260)
+$label7.Size = New-Object System.Drawing.Size(75,23) 
+$label7.Text = "Teams #:"
+$objForm.Controls.Add($label7) 
+ 
+$Data7 = New-Object System.Windows.Forms.TextBox 
+$Data7.Location = New-Object System.Drawing.Size(90,260) 
+$Data7.Size = New-Object System.Drawing.Size(200,200) 
+$Data7.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$Data7.TabIndex = 7
+$objForm.Controls.Add($Data7) 
+
+$Label77 = New-Object System.Windows.Forms.Label
+$Label77.Location = New-Object System.Drawing.Size(90,280)
+$Label77.Size = New-Object System.Drawing.Size(200,20) 
+$Label77.Text = "Enter Phone # as 123456789:"
+$objForm.Controls.Add($Label77) 
+ 
+#### Define DropBox label8
+$label8 = New-Object System.Windows.Forms.Label
+$label8.Location = New-Object System.Drawing.Size(15,305) 
+$label8.Size = New-Object System.Drawing.Size(75,23) 
+$label8.Text = "911 Local:"
+$objForm.Controls.Add($label8) 
+
+$data8 = New-Object System.Windows.Forms.ComboBox 
+$Data8.Location = New-Object System.Drawing.Size(90,305) 
+$Data8.Size = New-Object System.Drawing.Size(150,20) 
+$Data8.TabIndex = 8
+
+[void] $Data8.Items.Add("Airbus")
+[void] $Data8.Items.Add("Atlanta Office")
+[void] $Data8.Items.Add("Austin Office")
+[void] $Data8.Items.Add("Birmingham Office")
+[void] $Data8.Items.Add("Chattanooga Office")
+[void] $Data8.Items.Add("Dallas Office")
+[void] $Data8.Items.Add("DC Office")
+[void] $Data8.Items.Add("Houston Office")
+[void] $Data8.Items.Add("Huntsville")
+[void] $Data8.Items.Add("Mobile")
+[void] $Data8.Items.Add("Nashville Office")
+[void] $Data8.Items.Add("North TX Office")
+[void] $Data8.Items.Add("Orlando Office")
+[void] $Data8.Items.Add("RPI AL Office")
+[void] $Data8.Items.Add("Tampa Office")
+[void] $Data8.Items.Add("Tuscaloosa AL")
+[void] $Data8.Items.Add("Auburn AL")
+
+#### Add Project CheckBox
+$label9 = New-Object System.Windows.Forms.Label
+$label9.Location = New-Object System.Drawing.Size(15,338) 
+$label9.Size = New-Object System.Drawing.Size(75,23) 
+$label9.Text = "License:"
+$objForm.Controls.Add($label9) 
+
+$CheckBox1 = New-Object System.Windows.Forms.CheckBox
+$CheckBox1.Location = New-Object System.Drawing.Size(90,335)
+$CheckBox1.Size = New-Object System.Drawing.Size(82,23)
+$CheckBox1.Text = "Project"
+$objForm.Controls.Add($CheckBox1)
+
+$Data9 = New-Object System.Windows.Forms.TextBox 
+$Data9.Location = New-Object System.Drawing.Size(90,335) 
+$Data9.Size = New-Object System.Drawing.Size(80,23)  # Adjusted for a single line input
+$objForm.Controls.Add($Data9)
+
+$CheckBox1.Add_CheckedChanged({
+    if ($CheckBox1.Checked) {
+        $CheckBox1.Text = "Add Project"}
+        })
+
+#### Add EO2 CheckBox
+$CheckBox2 = New-Object System.Windows.Forms.CheckBox
+$CheckBox2.Location = New-Object System.Drawing.Size(172,335)
+$CheckBox2.Size = New-Object System.Drawing.Size(95,23)
+$CheckBox2.Text = "EO2 Lic"
+$objForm.Controls.Add($CheckBox2)
+
+$Data10 = New-Object System.Windows.Forms.TextBox 
+$Data10.Location = New-Object System.Drawing.Size(172,335) 
+$Data10.Size = New-Object System.Drawing.Size(95,23)  # Adjusted for a single line input
+$objForm.Controls.Add($Data10)
+
+$CheckBox2.Add_CheckedChanged({
+    if ($CheckBox2.Checked) {
+        $CheckBox2.Text = "EO2Only"}
+        })
+
+$objForm.Controls.Add($data1)
+$objForm.Controls.Add($data2)
+$objForm.Controls.Add($data3)
+$objForm.Controls.Add($data4)
+$objForm.Controls.Add($data5)
+$objForm.Controls.Add($data6)
+$objForm.Controls.Add($data7)
+$objForm.Controls.Add($data8)
+$objForm.Controls.Add($data9)
+$objForm.Controls.Add($data10)
+$objForm.Controls.Add($CancelButton)
+
+$objForm.Add_Shown({
+    $objForm.Activate()
+    $Data1.Focus()
+})
+
+$objForm.ShowDialog()
+
+ if ($script:cancelClicked) {
+    return
+    }
+
+#### License Inventory
+If ($CheckBox2.Text -ne 'EO2Only')
+{
+$TRUB4 = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "SPE_E5"} | Select -ExpandProperty PrepaidUnits
+$RRUB4 = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "SPE_E5"} | Select @{Name=’PrepaidUnits’;Expression={$_.ActiveUnits – $_.ConsumedUnits}} | Select -ExpandProperty PrepaidUnits
+$RUB4 = $TRUB4.Enabled + $RRUB4
+
+If ($RUB4 -lt 1){
+Add-Type -AssemblyName System.Windows.Forms
+$msgBoxInput =  [System.Windows.MessageBox]::Show("Remaining Microsoft E5 Licenses $RUB4, Please order More",'Confirmation','OkCancel','Error')
+  switch  ($msgBoxInput) {
+'Cancel' {
+return
+}
+}}
+}
+ELSE
+{
+$TRUB4 = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "EXCHANGEENTERPRISE"} | Select -ExpandProperty PrepaidUnits
+$RRUB4 = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "EXCHANGEENTERPRISE"} | Select @{Name=’PrepaidUnits’;Expression={$_.ActiveUnits – $_.ConsumedUnits}} | Select -ExpandProperty PrepaidUnits
+$RUB4 = $TRUB4.Enabled + $RRUB4
+
+If ($RUB4 -lt 1){
+Add-Type -AssemblyName System.Windows.Forms
+$msgBoxInput =  [System.Windows.MessageBox]::Show("Remaining Exchange Online 2 Licenses $RUB4, Please order More",'Confirmation','OkCancel','Error')
+  switch  ($msgBoxInput) {
+'Cancel' {
+return
+}
+}}
+}
+
+$TProB4 = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "PROJECTPROFESSIONAL"} | Select -ExpandProperty PrepaidUnits
+$RProB4 = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "PROJECTPROFESSIONAL"} | Select @{Name=’PrepaidUnits’;Expression={$_.ActiveUnits – $_.ConsumedUnits}} | Select -ExpandProperty PrepaidUnits
+$ProB4 = $TProB4.Enabled + $RProB4
+
+If ($ProB4 -lt 1){
+Add-Type -AssemblyName System.Windows.Forms
+$msgBoxInput =  [System.Windows.MessageBox]::Show("Remaining MS Project P3 Licenses $ProB4, Please order More",'Confirmation','OkCancel','Error')
+  switch  ($msgBoxInput) {
+'Cancel' {
+return
+}
+}}
+
+$Name = $data1.text
+$GivenName,$Surname = $Name.split(' ')
+$userACCT = $($GivenName.substring(0,1)+$Surname).ToLower()
+$Title = $data2.SelectedItem
+$MGR = $data3.text
+$Manager = Get-ADUser -Filter { displayName -like $MGR } | select samAccountName
+# Check if the manager was found
+if ($Manager) {
+    Write-Output "Manager found: $($Manager.samAccountName)"
+} else {
+    # If no manager was found, prompt for a new name
+    $MGR = Read-Host "Manager not found. Please Verfy the managers name"
+    $Manager = Get-ADUser -Filter { displayName -like $MGR } | select samAccountName
+    
+    if ($Manager) {
+        Write-Output "Manager found: $($Manager.samAccountName)"
+    } else {
+        Write-Output "No manager found for the entered name."
+        # Stop script execution
+        exit
+    }
+}
+$MGRdept = Get-ADUser -Filter { displayName -like $MGR } -Properties extensionAttribute6 | Select-Object -ExpandProperty extensionAttribute6
+$MGRdept = [string]$MGRdept  # Explicitly convert to string if necessary
+$MGRdiv = Get-ADUser -Filter { displayName -like $MGR } -Properties department | Select-Object -ExpandProperty department
+$MGRdiv = [string]$MGRdiv  # Explicitly convert to string if necessary
+$Company = $data4.SelectedItem
+$X =  $data5.SelectedItem
+$AP = $data6.SelectedItem
+$Name = "$GivenName $Surname"
+$ScriptPath = "HOAR.bat"
+$wWWHomePage = "https://hoar.sharepoint.com/"
+if($data7.text){
+$contrycode = '+1'
+$TeamsNum = $contrycode+$Data7.Text
+$OPhone = $Data7.text.Insert(3,'.').Insert(7,'.')
+}
+
+If ($Company -eq 'HPM' -and $Title -eq 'Administrative Assistant' -or $title -eq 'Office Assistant'){$PDFSSO = 'FoxIT'}
+ElseIf ($MGRdept -eq 'Human Resources' -or $MGRdept -eq 'Accounting'-or $MGRdept -eq 'Legal'){$PDFSSO = 'FoxIT'}
+ElseIf ($MGRdept -eq 'Information Technology' -and $title -notcontains 'VDC'){$PDFSSO = 'FoxIT'}
+ElseIf ($Title -contains 'Carpenters' -or $Title -contains 'Crane' -or $Title -contains 'Laborer'){$PDFSSO = 'NONE'}
+Else {$PDFSSO = 'BBSSO'}
+
+If ($x -Match 'HOAR_Atl_User') {$OU = "OU=USERS,OU=ATLANTA,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_Austin_User') {$OU = "OU=USERS,OU=AUSTIN,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_Bham_User') {$OU = "OU=USERS,OU=BIRMINGHAM,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_Chattanooga_User') {$OU = "OU=USERS,OU=Chattanooga,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_DC_User') {$OU = "OU=USERS,OU=DC,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_Houston_User') {$OU = "OU=USERS,OU=HOUSTON,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_Nashville_User') {$OU = "OU=USERS,OU=NASHVILLE,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_NTX_User') {$OU = "OU=USERS,OU=North TX,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_Tampa_User') {$OU = "OU=USERS,OU=Tampa,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HOAR_Orlando_User') {$OU = "OU=USERS,OU=ORLANDO,OU=HOAR,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HPM_Bham_User') {$OU = "OU=USERS,OU=BIRMINGHAM,OU=HPM,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HPM_Dallas_User') {$OU = "OU=USERS,OU=DALLAS,OU=HPM,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HPM_Johnson_User') {$OU = "OU=USERS,OU=HPMJohnson,OU=HPM,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HPM_Field_User') {$OU = "OU=USERS,OU=FIELD,OU=HPM,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HPM_Huntsville_User') {$OU = "OU=USERS,OU=FIELD,OU=HPM,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'HPM_Tuscaloosa_User') {$OU = "OU=USERS,OU=Tuscaloosa,OU=HPM,OU=ALL-ACTIVEEMP,DC=HOARLLC,DC=LOC"}
+ElseIf ($x -Match 'RPI_Bessemer_User') {$OU = "OU=Users,OU=Bessemer,OU=RPI Rents,OU=All-ActiveEmp,DC=hoarllc,DC=loc"}
+ElseIf ($x -Match 'RPI_Houston_User') {$OU = "OU=Users,OU=Houston,OU=RPI Rents,OU=All-ActiveEmp,DC=hoarllc,DC=loc"}
+ElseIf ($x -Match 'Service Accounts') {$OU = "OU=Service Accounts,DC=HOARLLC,DC=LOC"}
+
+If ($x -Match 'HOAR_Atl_User') {$Office = "Atlanta"}
+ElseIf ($x -Match 'HOAR_Austin_User') {$Office = "Austin"}
+ElseIf ($x -Match 'HOAR_Bham_User') {$Office = "Birmingham"}
+ElseIf ($x -Match 'HOAR_Chattanooga_User') {$Office = "Chattanooga"}
+ElseIf ($x -Match 'HOAR_DC_User') {$Office = "DC"}
+ElseIf ($x -Match 'HOAR_Field_User') {$Office = "Field"}
+ElseIf ($x -Match 'HOAR_Houston_User') {$Office = "Houston"}
+ElseIf ($x -Match 'HOAR_Nashville_User') {$Office = "Nashville"}
+ElseIf ($x -Match 'HOAR_NTX_User') {$Office = "North Texas"}
+ElseIf ($x -Match 'HOAR_Orlando_User') {$Office = "Orlando"}
+ElseIf ($x -Match 'HOAR_Tampa_User') {$Office = "Tampa"}
+ElseIf ($x -Match 'HPM_Bham_User') {$Office = "Birmingham"}
+ElseIf ($x -Match 'HPM_Dallas_User') {$Office = "Dallas"}
+ElseIf ($x -Match 'HPM_Field_User') {$Office = "Field"}
+ElseIf ($x -Match 'HPM_Huntsville_User') {$Office = "Huntsville"}
+ElseIf ($x -Match 'HPM_Johnson_User') {$Office = "HPMJohnson"}
+ElseIf ($x -Match 'HPM_Tuscaloosa_User') {$Office = "UofA"}
+ElseIf ($x -Match 'RPI_Bessemer_User') {$Office = "Bessemer"}
+ElseIf ($x -Match 'RPI_Houston_User') {$Office = "Alvin"}
+
+If ($x -Match 'HOAR_Atl_User') {$streetAddress = "1100 Circle 75 Parkway,Suite 850"}
+ElseIf ($x -Match 'HOAR_Austin_User') {$streetAddress = "7320 North MoPac Expressway, Suite 205"}
+ElseIf ($x -Match 'HOAR_Bham_User') {$streetAddress = "Two Metroplex Drive, Suite 400"}
+ElseIf ($x -Match 'HOAR_Chattanooga_User') {$streetAddress = "1300 Broad Street, Suite 201"}
+ElseIf ($x -Match 'HOAR_DC_User') {$streetAddress = "8200 Greensboro Drive, Suite 1150"}
+ElseIf ($x -Match 'HOAR_Field_User') {$streetAddress = "Two Metroplex Drive, Suite 400"}
+ElseIf ($x -Match 'HOAR_Houston_User') {$streetAddress = "10370 Richmond Ave. Suite 700"}
+ElseIf ($x -Match 'HOAR_Nashville_User') {$streetAddress = "215 Centerview Drive, Suite 300"}
+ElseIf ($x -Match 'HOAR_NTX_User') {$streetAddress = "3721 S Stonebridge Drive, Suite 602"}
+ElseIf ($x -Match 'HOAR_Orlando_User') {$streetAddress = "111 North Orange Ave Suite 1150"}
+ElseIf ($x -Match 'HOAR_Tampa_User') {$streetAddress = "100 South Ashley Drive, Suite 1120"}
+ElseIf ($x -Match 'HPM_Bham_User') {$streetAddress = "Two Metroplex Drive, Suite 300"}
+ElseIf ($x -Match 'HPM_Dallas_User') {$streetAddress = "5495 Belt Line Road, Suite 335"}
+ElseIf ($x -Match 'HPM_Huntsville_User') {$streetAddress = "200 Clinton Ave W, Unit 703"}
+ElseIf ($x -Match 'HPM_Field_User') {$streetAddress = "Two Metroplex Drive, Suite 300"}
+ElseIf ($x -Match 'HPM_Johnson_User') {$streetAddress = "1100 Circle 75 Parkway, Suite 850"}
+ElseIf ($x -Match 'HPM_Tuscaloosa_User') {$streetAddress = "UA Construction Administration – Cottage 9
+1420 Warrior Drive"}
+ElseIf ($x -Match 'RPI_Bessemer_User') {$streetAddress = "550 Belview Street"}
+ElseIf ($x -Match 'RPI_Houston_User') {$streetAddress = "1155 Cornett Road"}
+
+If ($x -Match 'HOAR_Atl_User') {$l = "Atlanta"}
+ElseIf ($x -Match 'HOAR_Austin_User') {$l = "Austin"}
+ElseIf ($x -Match 'HOAR_Bham_User') {$l = "Birmingham"}
+ElseIf ($x -Match 'HOAR_DC_User') {$l = "McLean"}
+ElseIf ($x -Match 'HOAR_Chattanooga_User') {$l = "Chattanooga"}
+ElseIf ($x -Match 'HOAR_Field_User') {$l = "Birmingham"}
+ElseIf ($x -Match 'HOAR_Houston_User') {$l = "Houston"}
+ElseIf ($x -Match 'HOAR_Nashville_User') {$l = "Brentwood"}
+ElseIf ($x -Match 'HOAR_NTX_User') {$l = "McKinney"}
+ElseIf ($x -Match 'HOAR_Orlando_User') {$l = "Orlando"}
+ElseIf ($x -Match 'HOAR_Tampa_User') {$l = "Tampa"}
+ElseIf ($x -Match 'HPM_Bham_User') {$l = "Birmingham"}
+ElseIf ($x -Match 'HPM_Dallas_User') {$l = "Dallas"}
+ElseIf ($x -Match 'HPM_Huntsville_User') {$l = "Huntsville"}
+ElseIf ($x -Match 'HPM_Field_User') {$l = "Birmingham"}
+ElseIf ($x -Match 'HPM_Johnson_User') {$l = "Atlanta"}
+ElseIf ($x -Match 'HPM_Tuscaloosa_User') {$l = "Tuscaloosa"}
+ElseIf ($x -Match 'RPI_Bessemer_User') {$l = "Bessemer"}
+ElseIf ($x -Match 'RPI_Houston_User') {$l = "Alvin"}
+
+If ($x -Match 'HOAR_Atl_User') {$st = "GA"}
+ElseIf ($x -Match 'HOAR_Austin_User') {$st = "TX"}
+ElseIf ($x -Match 'HOAR_Bham_User') {$st = "AL"}
+ElseIf ($x -Match 'HOAR_Chattanooga_User') {$st = "TN"}
+ElseIf ($x -Match 'HOAR_DC_User') {$st = "VA"}
+ElseIf ($x -Match 'HOAR_Field_User') {$st = "AL"}
+ElseIf ($x -Match 'HOAR_Houston_User') {$st = "TX"}
+ElseIf ($x -Match 'HOAR_Nashville_User') {$st = "TN"}
+ElseIf ($x -Match 'HOAR_NTX_User') {$st = "TX"}
+ElseIf ($x -Match 'HOAR_Orlando_User') {$st = "FL"}
+ElseIf ($x -Match 'HOAR_Tampa_User') {$st = "FL"}
+ElseIf ($x -Match 'HPM_Bham_User') {$st = "AL"}
+ElseIf ($x -Match 'HPM_Dallas_User') {$st = "TX"}
+ElseIf ($x -Match 'HPM_Field_User') {$st = "AL"}
+ElseIf ($x -Match 'HPM_Huntsville_User') {$st = "AL"}
+ElseIf ($x -Match 'HPM_Johnson_User') {$st = "GA"}
+ElseIf ($x -Match 'HPM_Tuscaloosa_User') {$st = "AL"}
+ElseIf ($x -Match 'RPI_Bessemer_User') {$st = "AL"}
+ElseIf ($x -Match 'RPI_Houston_User') {$st = "TX"}
+
+If ($x -Match 'HOAR_Atl_User') {$zip = "30339"}
+ElseIf ($x -Match 'HOAR_Austin_User') {$zip = "78731"}
+ElseIf ($x -Match 'HOAR_Bham_User') {$zip = "35209"}
+ElseIf ($x -Match 'HOAR_DC_User') {$zip = "22102"}
+ElseIf ($x -Match 'HOAR_Chattanooga_User') {$zip = "37402"}
+ElseIf ($x -Match 'HOAR_Field_User') {$zip = "35209"}
+ElseIf ($x -Match 'HOAR_Houston_User') {$zip = "77042"}
+ElseIf ($x -Match 'HOAR_Nashville_User') {$zip = "37027"}
+ElseIf ($x -Match 'HOAR_NTX_User') {$zip = "75070"}
+ElseIf ($x -Match 'HOAR_Orlando_User') {$zip = "32801"}
+ElseIf ($x -Match 'HOAR_Tampa_User') {$zip = "33601"}
+ElseIf ($x -Match 'HPM_Bham_User') {$zip = "35209"}
+ElseIf ($x -Match 'HPM_Dallas_User') {$zip = "75254"}
+ElseIf ($x -Match 'HPM_Field_User') {$zip = "35209"}
+ElseIf ($x -Match 'HPM_Huntsville_User') {$zip = "35801"}
+ElseIf ($x -Match 'HPM_Johnson_User') {$zip = "30339"}
+ElseIf ($x -Match 'HPM_Tuscaloosa_User') {$zip = "35404"}
+ElseIf ($x -Match 'RPI_Bessemer_User') {$zip = "35020"}
+ElseIf ($x -Match 'RPI_Houston_User') {$zip = "77511"}
+
+#### Creates Account
+Import-Module ActiveDirectory
+
+If (($Company -Match 'Hoar') -or ($Company -Match 'Hoar Holdings') -or ($Company -Match 'Hoar Consultant')) {
+$Mail = $userACCT + "@hoar.com"
+$UserPrincipalName = $Mail}
+If (($Company -Match 'HPM') -or ($Company -Match 'HPM  Consultant')) {
+$Mail = $userACCT + "@hpmleadership.com"
+$UserPrincipalName = $Mail}
+If ($Company -Match 'HPMJohnson') {
+$Mail = $userACCT + "@hpmjohnson.com"
+$UserPrincipalName = $Mail}
+If ($Company -Match 'RPIRents') {
+$Mail = $userACCT + "@rpirents.com"
+$UserPrincipalName = $Mail}
+
+#### This Checks to see if AD Account Or Email exist
+$UserX = Get-ADUser -LDAPFilter "(sAMAccountName=$userACCT)"
+$oldUAcct = $userx.SamAccountName
+
+#### This will Search for the SMTP Address and prompt for input to change if Existing address is Found
+Test-EmailAddressInAD -Email $mail
+
+#### This will cover New Unique users and New USers Similr to Existing users
+If ($Useracct -ne $oldUAcct) {
+
+If (($Company -Match 'Hoar') -or ($Company -Match 'Hoar Holdings') -or ($Company -Match 'Hoar Consultant')) {
+$Mail = $userACCT + "@hoar.com"
+$UserPrincipalName = $Mail}
+If (($Company -Match 'HPM') -or ($Company -Match 'HPM  Consultant')) {
+$Mail = $userACCT + "@hpmleadership.com"
+$UserPrincipalName = $Mail}
+If ($Company -Match 'HPMJohnson') {
+$Mail = $userACCT + "@hpmjohnson.com"
+$UserPrincipalName = $Mail}
+If ($Company -Match 'RPIRents') {
+$Mail = $userACCT + "@rpirents.com"
+$UserPrincipalName = $Mail}
+
+$NewUser = $True
+
+$ProxyAddresses = "SMTP:" + $Mail
+$ProxyAddresses1 = "smtp:" + $userACCT + "@Hoar.mail.onmicrosoft.com"
+$TargetAddress = "SMTP:" + $userACCT + "@Hoar.mail.onmicrosoft.com"
+
+#Generates - RandomPassword
+$WordList = Get-Content -Path '\\vmfs5\Admin\IT\WordList.txt' | Sort-Object {Get-Random} | Select-Object -First 3
+$DelimiterC = '!', '@', '#', '$', '%', '&', '*', '(', ')', '?', ':'
+$DelimiterN = 1..9 + 0 
+$Delimiter1 = Get-Random -InputObject $DelimiterC
+$PW = $Delimiter1 + $WordList[0] + '-'
+$Delimiter2 = Get-Random -InputObject $DelimiterN
+$PW += $WordList[1] + '-' + $Delimiter2
+
+$PW | Out-File -FilePath \\vmfs5\Admin\IT\UNCPWS\$userACCT.txt
+$SecurePW = ConvertTo-SecureString $PW -AsPlainText -Force
+
+New-ADUser -Name $Name -givenname $givenname -Surname $Surname -DisplayName $Name -SamAccountName $userACCT -UserPrincipalName $Mail -Path $OU -AccountPassword $SecurePW -PassThru | Enable-ADAccount
+
+}
+#### This will cover Returning users
+If ($Userx -ne $Null -and $Useracct -eq $oldUAcct) {
+
+$user = Get-ADUser $userACCT -Properties *
+$Name = ($user.Name)
+
+$msgBoxInput =  [System.Windows.MessageBox]::Show("Is this for $name",'Confirmation','YesNo','Error')
+
+  switch  ($msgBoxInput) {
+
+  'Yes' {
+
+$ReturnUser = $True
+$OldMail = ($user.mail)
+$First = ($user.GivenName)
+
+#### unHides Mailbox
+$user.msExchHideFromAddressLists = “false”
+Set-ADUser –instance $user
+
+If (($Company -Match 'Hoar') -or ($Company -Match 'Hoar Holdings') -or ($Company -Match 'Hoar Consultant')) {
+$NewMail = $userACCT + "@hoar.com"
+$UserPrincipalName = $NewMail}
+If (($Company -Match 'HPM') -or ($Company -Match 'HPM  Consultant')) {
+$NewMail = $userACCT + "@hpmleadership.com"
+$UserPrincipalName = $NewMail}
+If ($Company -Match 'HPMJohnson') {
+$NewMail = $userACCT + "@hpmjohnson.com"
+$UserPrincipalName = $NewMail}
+If ($Company -Match 'RPIRents') {
+$NewMail = $userACCT + "@rpirents.com"
+$UserPrincipalName = $NewMail}
+
+$ProxyAddresses = "SMTP:" + $NewMail
+$ProxyAddresses1 = "smtp:" + $userACCT + "@Hoar.mail.onmicrosoft.com"
+$TargetAddress = "SMTP:" + $userACCT + "@Hoar.mail.onmicrosoft.com"
+
+If ($OldMail -eq $NewMail) {$mail = $OldMail}
+Else {$mail = $NewMail}
+
+#### Update Attributes
+IF ($oldMail -ne $NewMail) {
+$oldProx = "SMTP:" + $oldMail
+$oldProx1 = "smtp:" + $oldMail
+Set-ADUser $userACCT -Remove @{ProxyAddresses=$oldProx}
+Set-ADUser $userACCT -add @{proxyAddresses=$oldProx1}
+Set-ADUser $userACCT -UserPrincipalName $mail
+}
+
+Clear-ADAccountExpiration -Identity $userACCT
+#### Enable ALL Logon Hours
+[byte[]]$hours = @(255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255)
+Set-ADUser -Identity $userACCT -Replace @{logonhours = $hours}
+
+Enable-ADAccount -Identity $userACCT
+
+#### Add user to default groups
+IF ($title -Match "Contractor" -Or $title -Match 'Consultant') {Add-ADGroupMember -Identity NoWhere -Members $userACCT -ErrorAction SilentlyContinue
+Set-aduser -identity $userACCT -Replace @{PrimaryGroupID="20623"}
+}
+Else
+{
+ Add-ADGroupMember -Identity "Domain Users" -Members $userACCT
+ Set-aduser -identity $userACCT -Replace @{PrimaryGroupID="513"}
+ Remove-ADGroupMember -Identity "termed-Empls" -Members $useracct -Confirm:$False
+ }
+
+#### resets password
+$WordList = Get-Content -Path '\\vmfs5\Admin\IT\WordList.txt' | Sort-Object {Get-Random} | Select-Object -First 3
+$DelimiterC = '!', '@', '#', '$', '%', '&', '*', '(', ')', '?', ':'
+$DelimiterN = 1..9 + 0 
+$Delimiter1 = Get-Random -InputObject $DelimiterC
+$PW = $Delimiter1 + $WordList[0] + '-'
+$Delimiter2 = Get-Random -InputObject $DelimiterN
+$PW += $WordList[1] + '-' + $Delimiter2
+
+$PW | Out-File -FilePath \\vmfs5\Admin\IT\UNCPWS\$userACCT.txt
+$SecurePW = ConvertTo-SecureString $PW -AsPlainText -Force
+Set-ADAccountPassword $userACCT -NewPassword $SecurePW -Reset -PassThru
+
+#### Move AD account out of Termed OU
+get-aduser $userACCT | move-adobject -targetpath "$OU"
+
+#### Licenses O365 after replication(Get-ADDomainController -Filter *).Name | Foreach-Object { repadmin /syncall $_ (Get-ADDomain).DistinguishedName /AdeP }
+repadmin /syncall DC-DCB /AdeP
+
+$ADSync = New-PSSession -ComputerName vmadconnect
+Import-Module -Name ADSync -PSSession $ADSync
+$syncStatus = Get-ADSyncConnectorRunStatus
+if ($syncStatus) {
+    $OKB = "Sync cycle already running Please Wait"
+    $OKB
+    Call-dialogue_psf -TotalTime 60 -OKB $OKB
+    Start-ADSyncSyncCycle -PolicyType Delta
+    Remove-Module ADSync
+    Remove-PSSession $ADSync
+} else {
+    Start-ADSyncSyncCycle -PolicyType Delta
+    Remove-Module ADSync
+    Remove-PSSession $ADSync
+}
+
+#### Calls a 4 minute pause to Sync AD and O365
+$OKB = "Re-Animating AD Account 13 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 90 -OKB $OKB
+
+#### Convert to shared Mailbox
+Set-Mailbox $mail -Type regular
+
+#### Call the form
+$OKB = "Re-Animating Mailbox 11 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 60 -OKB $OKB
+
+Set-MailboxAutoReplyConfiguration -Identity $mail -ExternalMessage $null
+Set-MailboxAutoReplyConfiguration -Identity $mail -InternalMessage $null
+Set-MailboxAutoReplyConfiguration -Identity $mail -AutoReplyState Disabled
+
+#### Reset MFA Authentication
+$noMfaConfig = @()
+Set-MsolUser -UserPrincipalName $mail -StrongAuthenticationMethods $noMfaConfig
+Reset-MsolStrongAuthenticationMethodByUpn -UserPrincipalName $mail
+
+  }
+  'No' {
+
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+
+$objForm = New-Object System.Windows.Forms.Form 
+$objForm.Text = "Confirmation"
+$objForm.Size = New-Object System.Drawing.Size(350,170) 
+$objForm.StartPosition = "CenterScreen"
+$objForm.TopMost = $True
+
+
+$label10 = New-Object System.Windows.Forms.Label
+$label10.Location = New-Object System.Drawing.Size(40,30)
+$label10.Size = New-Object System.Drawing.Size(300,23) 
+$label10.Text = "Please find correct UserName and Try again.."
+$objForm.Controls.Add($label10) 
+
+$CancelButton = New-Object System.Windows.Forms.Button
+$CancelButton.Location = New-Object System.Drawing.Size(125,70)
+$CancelButton.Size = New-Object System.Drawing.Size(100,23)
+$CancelButton.Text = "Cancel"
+$script:cancelClicked = $false
+$CancelButton.Add_Click({
+    $script:cancelClicked = $true
+    $objForm.Close()
+})
+$objForm.Controls.Add($CancelButton)
+
+$objForm.Add_Shown({$objForm.Activate()})
+$result = $objForm.ShowDialog()  # Show the dialog once and capture the result
+
+if ($script:cancelClicked) {
+    return
+}
+  }
+}
+}
+
+$OKB = "Activating AD Account 11 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 30 -OKB $OKB
+
+#### Update Attributes
+Set-ADUser $userACCT -description $Title
+Set-ADUser $userACCT -office $Office
+Set-ADUser $userACCT -emailAddress $Mail
+Set-ADUser $userACCT -add @{wWWHomepage=$wWWHomePage}
+Set-ADUser $userACCT -streetAddress $StreetAddress
+Set-ADUser $userACCT -city $l
+Set-ADUser $userACCT -state $st
+Set-ADUser $userACCT -postalCode $zip
+Set-ADUser $userACCT -scriptPath $ScriptPath
+Set-ADUser $userACCT -company $Company
+Set-ADUser $userACCT -title $Title
+Set-ADUser $userACCT -Manager $Manager
+Set-ADUser $userACCT -add @{proxyAddresses=$ProxyAddresses}
+Set-ADUser $userACCT -add @{proxyAddresses=$ProxyAddresses1}
+Set-ADUser $userACCT -add @{targetAddress=$TargetAddress}
+Set-ADUser $userACCT -add @{MailNickName = $userACCT}
+if ($Data7.text){
+Set-ADUser $userACCT -OfficePhone $OPhone
+Set-ADuser $userACCT -Replace @{ipPhone = $OPhone}
+}
+Set-ADUser $userACCT -add @{extensionAttribute6 = $MGRdept}
+Set-ADUser $userACCT -department $MGRdiv
+
+if ([string]::IsNullOrEmpty($DataHyp.text)) {
+    $Name = "$GivenName $Surname"
+} else {
+    $Name = $GivenName+' '+$DataHyp.text+,'-'+$Surname
+    Set-ADUser $userACCT -Displayname $Name
+}
+
+if ([string]::IsNullOrEmpty($dataSufx.Text)) {
+    $Name = "$GivenName $Surname"
+} else {
+    $Name = $GivenName+' '+ $Surname+' '+$dataSufx.text
+    Set-ADUser $userACCT -Displayname $Name
+}
+
+If ($L -Match 'Tuscaloosa') {
+$UA = $userACCT + "@ua.edu"
+Set-ADUser $userACCT -add @{extensionAttribute2=$UA}
+}
+
+If ($Title -Match 'Co-op Student' -Or $title -Match 'Intern' -Or $title -Match 'Contractor' -Or $title -Match 'Consultant') {Set-ADUser $userACCT -replace @{msnpallowdialin=$False}}
+Else {Set-ADUser $userACCT -replace @{msnpallowdialin=$True}}
+
+#### Add user to default groups
+IF ($title -Match "Contractor" -Or $title -Match 'Consultant') {Add-ADGroupMember -Identity NoWhere -Members $userACCT -ErrorAction SilentlyContinue
+Set-aduser -identity $userACCT -Replace @{PrimaryGroupID="20623"}
+}
+Else
+{
+ Add-ADGroupMember -Identity "PW-Policy-ALL" -Members $userACCT
+ Add-ADGroupMember -Identity "Sig-S365" -Members $userACCT
+
+ If ($Company -eq 'Hoar Construction' -and $Office -inotmatch 'DC') {Add-ADGroupMember -Identity "Sig-HOAR" -Members $userACCT}
+ If ($Company -eq 'Hoar Construction' -and $Office -match 'DC') {Add-ADGroupMember -Identity "Sig-DC" -Members $userACCT}
+ If ($Company -eq 'HOAR Holdings') {Add-ADGroupMember -Identity "Sig-Holdings" -Members $userACCT}
+ 
+ If ($Company -eq 'HPMJohnson' -And $Mail -contains '@hpmjohson.com') {Add-ADGroupMember -Identity "Sig-HPMJohnson" -Members $userACCT}
+ If ($Company -eq 'HPMJohnson' -And $Mail -contains '@hpmleadership.com') {Add-ADGroupMember -Identity "Sig-HPM-Johnson" -Members $userACCT}
+ 
+ If ($Company -Match 'HPM' -And $L -Match 'Tuscaloosa' ) {
+ Add-ADGroupMember -Identity "Sig-UA" -Members $userACCT
+ Add-ADGroupMember -Identity "HPM-Hdrive-C" -Members $userACCT}
+
+ If ($Company -Match 'HPM' -And $L -inotmatch 'Tuscaloosa' ) {
+ Add-ADGroupMember -Identity "Sig-HPM" -Members $userACCT
+ Add-ADGroupMember -Identity "HPM-Hdrive-C" -Members $userACCT}
+ }
+
+  If ($Company -Match 'RPIRents') {
+ Add-ADGroupMember -Identity "Sig-RPIRents" -Members $userACCT
+ Add-ADGroupMember -Identity "RDS-POR-AZ1" -Members $userACCT
+}
+ 
+If ($Title -contains 'Accounting' -Or $title -Match 'Payroll') {
+Add-ADGroupMember -Identity "Accounting" -Members $userACCT
+Add-ADGroupMember -Identity "Accounting-All" -Members $userACCT
+Add-ADGroupMember -Identity "Accounts Payable" -Members $userACCT
+Add-ADGroupMember -Identity "Accounts Receivable" -Members $userACCT
+}
+
+If ($Title -contains 'Marketing') {
+Add-ADGroupMember -Identity "Marketing Printer" -Members $userACCT
+Add-ADGroupMember -Identity "Marketing Group" -Members $userACCT
+}
+
+If ($AP) {Add-ADGroupMember -Identity $AP -Members $userACCT
+}
+
+$OKB = "Applying Attributes 10 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 30 -OKB $OKB
+
+#### Licenses O365 after replication
+IF ($NewUser -eq $true){
+repadmin /syncall DC-DCB /AdeP
+
+$ADSync = New-PSSession -ComputerName vmadconnect
+Import-Module -Name ADSync -PSSession $ADSync
+$syncStatus = Get-ADSyncConnectorRunStatus
+if ($syncStatus) {
+    $OKB = "Sync cycle already running Please Wait"
+    $OKB
+    Call-dialogue_psf -TotalTime 60 -OKB $OKB
+    Start-ADSyncSyncCycle -PolicyType Delta
+    Remove-Module ADSync
+    Remove-PSSession $ADSync
+} else {
+    Start-ADSyncSyncCycle -PolicyType Delta
+    Remove-Module ADSync
+    Remove-PSSession $ADSync
+}
+
+
+#### Calls a 2 minute pause to Sync AD and O365
+$OKB = "Syncing AD to O365 8 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 90 -OKB $OKB
+}
+
+#### Grabs availible Licenses and set user with )365 license
+$AADUser  = Get-MgUser -Filter "UserPrincipalName eq '$mail'"
+Update-MgUser -userid $mail -UsageLocation US
+
+#### Licensing Project P3
+$USerID = Get-MgUser -UserId $Mail
+If ($CheckBox1.Text -eq 'Add Project') {Set-MgUserLicense -UserId $Mail -AddLicenses @{SkuId = "53818b1b-4a27-454b-8896-0dba576410e6"} -RemoveLicenses @()}
+
+#### Licensing ME5 or EO2
+If ($CheckBox2.Text -ne 'EO2Only'){
+$EmsSku = Get-MgSubscribedSku -All | Where SkuPartNumber -eq 'SPE_E5'
+$newDisabledPlans = $EmsSku.ServicePlans | `
+    Where ServicePlanName -in ("KAIZALA_STANDALONE", "Deskless", "Sway", "Yammer_Enterprise", "Viva Engage Core", "Viva Learning Seeded") | `
+    Select -ExpandProperty ServicePlanId
+$disabledPlans = ($userDisabledPlans + $newDisabledPlans) | Select -Unique
+$addME5 = @(
+    @{
+        SkuId = $EmsSku.SkuId
+        DisabledPlans = $disabledPlans
+    }
+)
+Set-MgUserLicense -UserId $Mail -AddLicenses $addME5 -RemoveLicenses @()
+$TRUA = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "SPE_E5"} | Select -ExpandProperty PrepaidUnits
+$RRUA = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "SPE_E5"} | Select @{Name=’PrepaidUnits’;Expression={$_.ActiveUnits – $_.ConsumedUnits}} | Select -ExpandProperty PrepaidUnits
+$RUA = $TRUA.Enabled + $RRUA
+}
+ELSE
+{
+# Retrieve the EXCHANGEENTERPRISE SKU
+$EmsSku = Get-MgSubscribedSku -All | Where-Object { $_.SkuPartNumber -eq 'EXCHANGEENTERPRISE' }
+
+# Prepare the object to update the SKU with no disabled plans
+$addEO2 = @(
+    @{
+        SkuId = $EmsSku.SkuId
+        DisabledPlans = @()  # No plans disabled
+    }
+)
+Set-MgUserLicense -UserId $Mail -AddLicenses $addEO2 -RemoveLicenses @()
+$TRUA = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "EXCHANGEENTERPRISE"} | Select -ExpandProperty PrepaidUnits
+$RRUA = Get-MgSubscribedSku | Where {$_.SkuPartNumber -like "EXCHANGEENTERPRISE"} | Select @{Name=’PrepaidUnits’;Expression={$_.ActiveUnits – $_.ConsumedUnits}} | Select -ExpandProperty PrepaidUnits
+$RUA = $TRUA.Enabled + $RRUA
+
+# Microsoft Entra ID P2 Lic
+$sku = Get-MgSubscribedSku | Where-Object { $_.SkuPartNumber -eq "AAD_PREMIUM_P2" }
+# Create the assigned license object
+$assignedLicense = New-Object -TypeName Microsoft.Graph.PowerShell.Models.MicrosoftGraphAssignedLicense
+$assignedLicense.SkuId = $sku.SkuId
+# Add the license to the user
+Set-MgUserLicense -UserId $mail -AddLicenses @($assignedLicense) -RemoveLicenses @()
+}
+
+Start-Sleep -Seconds 15
+
+#### Call a 2 Min pause to License and create Mailbox
+$OKB = "Licensing Account 6 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 120 -OKB $OKB
+
+#### Verification
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
+
+$objForm = New-Object System.Windows.Forms.Form 
+$objForm.Text = "AD Account Created"
+$objForm.Size = New-Object System.Drawing.Size(400, 340) 
+$objForm.StartPosition = "CenterScreen"
+$objForm.TopMost = $True
+
+$OKButton = New-Object System.Windows.Forms.Button
+$OKButton.Location = New-Object System.Drawing.Size(140, 270)
+$OKButton.Size = New-Object System.Drawing.Size(100, 23)
+$OKButton.Text = "OK"
+$OKButton.Add_Click({$X = $data20.SelectedItem; $objForm.Close()})
+$objForm.Controls.Add($OKButton)
+
+#### Define text labels
+$labels = @(
+    @{Text="Full Name:"; Y=15},
+    @{Text="$name"; Y=15; X=167},
+    @{Text="User Name:"; Y=40},
+    @{Text="$userACCT"; Y=40; X=167},
+    @{Text="Email Address:"; Y=65},
+    @{Text="$Mail"; Y=65; X=167},
+    @{Text="Company:"; Y=90},
+    @{Text="$Company"; Y=90; X=167},
+    @{Text="Location:"; Y=115},
+    @{Text="$office"; Y=115; X=167},
+    @{Text="Organzational Unit:"; Y=140},
+    @{Text="$x"; Y=140; X=167}
+    )
+
+# Conditionally add labels
+if ($Checkbox2.Text -ne 'EO2Only') {
+    $labels += @{Text="ME5 Lic' Remain"; Y=165}    
+    $labels += @{Text="$RUA"; Y=165; X=167}
+}
+Else{
+    $labels += @{Text="EO2 Lic' Remain"; Y=165}    
+    $labels += @{Text="$RUA"; Y=165; X=167}
+}
+
+if ($PDFSSO -eq 'BBSSO') {
+    $labels += @{Text="Added to BB SSO"; Y=190}
+}Else{
+    $labels += @{Text="Added to FoxIT SSO"; Y=190}
+}
+
+if ($Checkbox1.Text -eq 'Add Project') {
+    $labels += @{Text="Licensed for Project P3"; Y=215}
+}
+
+if ($Data7.Text -gt 1) {
+    $labels += @{Text="Teams Number:"; Y=240}
+    $labels += @{Text="$TeamsNum"; Y=240; X=167}
+}
+
+# Create and add labels to form
+foreach ($labelInfo in $labels) {
+    $label = New-Object System.Windows.Forms.Label
+    $label.Location = New-Object System.Drawing.Size(40, $labelInfo.Y)
+    $label.Size = New-Object System.Drawing.Size(130, 23)
+    $label.Text = $labelInfo.Text
+    $objForm.Controls.Add($label)
+
+    if ($labelInfo.X) {
+        $labelValue = New-Object System.Windows.Forms.Label
+        $labelValue.Location = New-Object System.Drawing.Size($labelInfo.X, $labelInfo.Y)
+        $labelValue.Size = New-Object System.Drawing.Size(180, 23)
+        $labelValue.Text = $labelInfo.Text
+        $objForm.Controls.Add($labelValue)
+    }
+}
+
+$objForm.Add_Shown({$objForm.Activate()})
+[void] $objForm.ShowDialog()
+
+#### Lic Count Report
+$smtp = "10.1.1.65"
+$fromLIC = "MSLMGR@hoar.com"
+$too = @('Tim Doss <tdoss@hoar.com>', 'Miller Rock <mrock@hoar.com>')
+$Cc =  @('Amanda Warren <abwarren@hoar.com>', 'Jerry Mays <jmays@hoar.com>', 'Joe Lee <jalee@hoar.com>', 'Deandre Robinson <drobinson@hoar.com>', 'Laura Cash <lcash@hoar.com>')
+$subjectLIC = "Microsoft License Count is Down to $RUA left"
+If ($newuser -eq $True){
+$bodyLIC += "$Name ($title) ($userACCT) has been Created<br>"}
+else{
+$bodyLIC += "$Name ($title) ($userACCT) has been re-animated<br>"}
+$bodyLIC += "They are in $company',' $MGRdiv Division, their department is listed as $MGRdept<br>"
+$bodyLIC += "Email Address is $mail"
+$bodyLIC += "<br>"
+$bodyLIC += "Their initial PW is here: \\vmfs5\Admin\IT\UNCPWS\$userACCT.txt"
+$bodyLIC += "<br>"
+if ($CheckBox2.Text -ne 'EO2Only'){
+$bodyLIC += "Microsoft E5 Count <br>"
+$bodyLIC += "$RUA remain<br>"}
+ELSE{
+$bodyLIC += "Email only EO2 count <br>"
+$bodyLIC += "$RUA remain<br>"
+}
+$bodyLIC += "<br>"
+if ($Data7.Text) {
+$bodyLIC += "The Teams number below was added<br>"
+$bodyLIC += "$OPhone<br>"
+$bodyLIC += "<br>"
+}
+if ($PDFSSO -eq 'BBSSO') {
+$bodyLIC += "They are a BB-SSO member<br>"
+$bodyLIC += "<br>"
+}else{
+$bodyLIC += "They are a FoxIT-SSO Member<br>"
+$bodyLIC += "<br>"
+}
+if ($Checkbox1.Text -eq 'Add Project') {
+$bodyLIC += "They are Licensed for Project P3<br>"
+$bodyLIC += "Please install during PC build<br>"
+}
+
+#### Send the message  
+Send-MailMessage  -SmtpServer $smtp -from $fromLIC -to $too -Cc $Cc -Subject $subjectLIC -Body $bodyLIC -BodyAsHtml
+
+#### Call a 2 Min pause to ensure Mailbox has been Created
+IF ($NewUser -eq $true){
+$OKB = "Creating Mailbox 4 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 120 -OKB $OKB
+}
+
+#### Mailbox Creation Check Loop If not
+$mailboxExists = $false
+$maxAttempts = 30  # Maximum number of attempts before giving up
+$attempt = 0
+$delay = 30  # Delay in seconds between each attempt
+
+while (-not $mailboxExists -and $attempt -lt $maxAttempts) {
+    $attempt++
+    try {
+        $mailbox = Get-Mailbox -Identity $mail -ErrorAction Stop
+        $mailboxExists = $true
+        Write-Output "Mailbox for $mail was created."
+    } catch {
+        Write-Output "Attempt $attempt Mailbox for $mail not found. Retrying in $delay seconds..."
+        $OKB = "Still Creating Mailbox"
+        $OKB
+        Call-dialogue_psf -TotalTime 30 -OKB $OKB
+    }
+}
+
+if (-not $mailboxExists) {
+    Write-Output "Failed to find mailbox for $mail after $maxAttempts attempts."
+    Write-Output "STOPPING SCRIPT."
+    Stop-Process -Id $PID
+
+}
+
+#### Add User to M365 Groups
+Import-Module ExchangeOnlineManagement
+
+IF ($PDFSSO -eq 'BBSSO') {New-MgGroupMember -GroupId 7685f3a0-cda3-4b1a-9745-1060fdbca531 -DirectoryObjectId $USerID.id}
+ELSE {New-MgGroupMember -GroupId 4a5747c2-dd8f-439b-970e-6cbd8f267948 -DirectoryObjectId $USerID.id}
+
+New-MgGroupMember -GroupId bb888bf0-d76c-4fc9-8e6e-f9b4f72684ff -DirectoryObjectId $AADUser.Id
+
+#### User welcoming MEssage
+$Welcomefrom = "NOREPLY@hoar.com"
+$WelcomeTO = "$Mail"
+$Welcomesubject = "Welcome to $Company - New Hire Checklist"
+$htmlContent = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Hire Welcome Letter and Checklist</title>
+</head>
+<body>
+    <img src="https://hoar.com/wp-content/uploads/SupportWelcome.png" alt="Company Logo" style="width:975px;height:auto;">
+    <h1>Welcome to $Company</h1>
+    <p>$GivenName,</p>
+    
+    <p>We are pleased you&#39ve decided to join us and look forward to working with you. Below you will find a checklist of steps to take to get you on your way.</p>
+    
+    <h2>Checklist after Receiving Your New Laptop</h2>
+    <ul>
+        <li>
+            You should have received a text to your personal cell phone number that contained your username and starting password. If you can&#39t find it, please contact your supervisor.<br>
+            If they are unavailable, please call Support on <a href="https://teams.microsoft.com/l/call/0/0?users=helpdeskphone@hoar.onmicrosoft.com">Teams</a> or at <a href="https://teams.microsoft.com/l/call/0/0?users=helpdeskphone@hoar.onmicrosoft.com">205.423.3535</a>.<br>
+            Use your credentials to sign into your new laptop. Once in, please create a new password by visiting <a href="https://passwordreset.microsoftonline.com/">https://passwordreset.microsoftonline.com/</a>.<br>
+            Our <a href="https://support.hoar.com/a/solutions/articles/13000058380">password policy</a> is 12 characters, you must include a capital letter and a space or symbol or number.<br>
+            Please do not include any part of your name or spring, summer, fall or winter..
+        </li>
+        <li>
+            If you&#39re getting a company iPhone or iPad, please use the end user setup guide sent to your work email. 
+            If you still need help, please reach out to Support at <a href="https://support.hoar.com/support/tickets/new">support.hoar.com</a>.
+        </li>
+        <li>
+            If you need additional equipment, please submit a Service Request <a href="https://support.hoar.com/support/catalog/items">Ticket</a> or call <a href="https://teams.microsoft.com/l/call/0/0?users=helpdeskphone@hoar.onmicrosoft.com">205.423.3535</a> if you have an emergency.
+        </li>
+      
+"@
+if ($TeamsNum) {
+    $htmlContent += @"
+        <li>
+            You have been assigned this Teams calling number: $OPhone.<br>
+            Please refer to <a href="https://support.hoar.com/support/solutions/articles/13000078773-teams-calling">Teams Calling Guide</a> for instructions on how to place and receive calls through Microsoft Teams.<br>
+        </li>
+"@
+}
+$htmlContent += @"
+    </ul>
+    <p>Knowledge Base and FAQ&#39s are available here: <a href="https://support.hoar.com/a/solutions/articles/filters/all_articles">Freshservice FAQ&#39s</a></p>
+ 
+    <h2>IT Support Contact Information</h2>
+    <p>As the IT Support team here, we would like to introduce ourselves to you and make sure you know how to get the support you need.</p>
+    <ol>
+        <li>
+            The first, and best, way is to put in a ticket if there is a problem or you have a question:
+            <a href="https://support.hoar.com/support/tickets/new">Submit an Incident ticket</a>.
+        </li>
+        <li>
+            Or put in a service request ticket in the service catalog if you need hardware, software, or access to something:
+            <a href="https://support.hoar.com/support/catalog/items">Service Catalog</a>.
+        </li>
+        <li>
+            Of course, you can also call us on <a href="https://teams.microsoft.com/l/call/0/0?users=helpdeskphone@hoar.onmicrosoft.com">Teams</a> or at <a href="https://teams.microsoft.com/l/call/0/0?users=helpdeskphone@hoar.onmicrosoft.com">205.423.3535</a>. Someone should be available to take your call, but if we&#39re busy please don&#39t hang up.<br>
+            Leave a message and that message will automatically become a ticket. Again, the more detail the better.<br>
+            While you&#39re at it, why not make IT Support at <a href="https://teams.microsoft.com/l/call/0/0?users=helpdeskphone@hoar.onmicrosoft.com">205.423.3535</a> a contact in your iPhone?
+        </li>
+    </ol>
+    <p>Lastly, we have a great resources page for new hires here: <a href="https://hoar.sharepoint.com/sites/Technology/SitePages/New-Hire-Resources.aspx">New Hire Resources (sharepoint.com)</a></p>
+    <p>We hope this is helpful. Please let us know if you have any questions; we&#39re glad you&#39re here!</p>
+    
+    <p>Sincerely,</p>
+    <ul>
+        <li><a href="https://apps-hoar.msappproxy.net/EmployeeProfile.aspx?emp=71483">Amanda Warren</a>, Systems Technician</li>
+        <li><a href="https://apps-hoar.msappproxy.net/EmployeeProfile.aspx?emp=73159">Deandre Robinson</a>, Data and Application Support Specialist</li>
+        <li><a href="https://apps-hoar.msappproxy.net/EmployeeProfile.aspx?emp=NA">Laura Cash</a>, Systems Technician</li>
+        <li><a href="https://apps-hoar.msappproxy.net/EmployeeProfile.aspx?emp=73266">Jerry Mays</a>, Systems Technician</li>
+        <li><a href="https://apps-hoar.msappproxy.net/EmployeeProfile.aspx?emp=73027">Joe Lee</a>, Systems Technician</li>
+        <li><a href="https://apps-hoar.msappproxy.net/EmployeeProfile.aspx?emp=71361">Nick Polk</a>, IT Manager</li>
+    </ul>
+</body>
+</html>
+"@
+
+$OKB = "Sending Welcome Message 3 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 60 -OKB $OKB
+
+#### Send the message  
+Send-MailMessage -SmtpServer $Smtp -from $Welcomefrom -to $mail -Subject $Welcomesubject -Body $htmlContent -BodyAsHtml -Priority High
+
+#### Enables Mailbox Audit
+Set-Mailbox -Identity $Mail -AuditEnabled $true
+Add-MailboxPermission -Identity $mail -User 365-Admins-Full@Hoar.onmicrosoft.com -AccessRights FullAccess -InheritanceType All
+$OKB = "Setting Mailbox Perms 2 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 60 -OKB $OKB
+
+Request-SPOPersonalSite -UserEmails $mail
+
+IF ($NewUser -eq $true){
+Enable-Mailbox -Identity $mail -Archive
+}
+
+if ($Data7.Text) {
+if ($Data8.Text -eq "Atlanta Office") { $911local = "f6f01668-2b40-4feb-80fd-7128f49a7d41"; $validate = $true }
+if ($Data8.Text -eq "Airbus") { $911local = "21f2fb4a-e7c9-4333-b25a-b195a535a3c8"; $validate = $true }
+if ($Data8.Text -eq "Austin Office") { $911local = "271942d6-b5be-455a-a9a5-6e093977e9a9"; $validate = $true }
+if ($Data8.Text -eq "" -or $Data8.Text -eq "Birmingham Office") { $911local = "d16ef1c8-cb85-422c-a0a4-a6d684f2a201"; $validate = $true }
+if ($Data8.Text -eq "Chattanooga Office") { $911local = "152b5284-d002-403c-94b6-f8a9dd23b41e"; $validate = $true }
+if ($Data8.Text -eq "Dallas Office") { $911local = "d77cb8bd-50ef-4f06-92a1-9eced5f3adf4"; $validate = $true }
+if ($Data8.Text -eq "DC Office") { $911local = "30ad37ad-306c-4c41-b4fc-d7c9de3220cb"; $validate = $true }
+if ($Data8.Text -eq "Houston Office") { $911local = "2d0a3b6a-d3bb-493f-a1a6-aff2270fee4f"; $validate = $true }
+if ($Data8.Text -eq "Huntsville") { $911local = "8c6240f8-7982-4c3d-92ec-451f11c0f35e"; $validate = $true }
+if ($Data8.Text -eq "Mobile") { $911local = "dbfbfefb-4603-4271-93b0-e9dfc242d63d"; $validate = $true }
+if ($Data8.Text -eq "Nashville Office") { $911local = "d360217e-42b6-487c-8e32-5f14a67a58ad"; $validate = $true }
+if ($Data8.Text -eq "North TX Office") { $911local = "790f58ca-db2c-4070-a049-741509e691dc"; $validate = $true }
+if ($Data8.Text -eq "Orlando Office") { $911local = "f663d95e-80e3-44b3-9f3c-51e3e80148c7"; $validate = $true }
+if ($Data8.Text -eq "RPI AL Office") { $911local = "481e42ea-2500-4cbe-9149-ea01b51e553b"; $validate = $true }
+if ($Data8.Text -eq "Tampa Office") { $911local = "29447c31-5e92-4b31-b6b8-1294f76c8d88"; $validate = $true }
+if ($Data8.Text -eq "Tuscaloosa AL") { $911local = "40918217-da39-4ea9-8d4e-9c80e2080ec3"; $validate = $true }
+if ($Data8.Text -eq "Auburn AL") { $911local = "afbfe18f-b728-41cc-9c1b-a5f0974b4b56"; $validate = $true }
+
+$OKB = "Enabling Teams 1 Min Left"
+$OKB
+Call-dialogue_psf -TotalTime 30 -OKB $OKB
+
+Set-csphonenumberassignment -identity $mail -phonenumber $TeamsNum -PhoneNumberType DirectRouting -LocationId $911local
+Grant-CsOnlineVoiceRoutingPolicy -Identity $mail -PolicyName VRP_US_National_Calls
+Set-CSPhoneNumberAssignment -identity $mail -EnterpriseVoiceEnabled $true
+}
+
+Disable-ADAccount -Identity $userACCT
+
+If ($RUA -lt 3) {
+    Add-Type -AssemblyName System.Windows.Forms
+    $msgBoxInput = [System.Windows.MessageBox]::Show("Remaining Microsoft E5 Licenses $RUA, Please order 5 More. Click 'OK' to purchase more licenses.", 'Confirmation', 'OkCancel', 'Error')
+    switch ($msgBoxInput) {
+        'Cancel' {
+            return
+        }
+        'OK' {
+            Start-Process "https://portal.office.com/Adminportal/Home/?#/subscriptions/vlnew"
+        }
+    }
+}
